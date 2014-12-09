@@ -1,17 +1,44 @@
-class Strategy
-	attr_accessor :parameters
+# Starting strategy parameters
+BUY_VOLUME = 300
+SELL_VOLUME = 300
+BUY_VELOCITY = 2
+SELL_VELOCITY = -1
 
-	def initialize
-		
+# BUY_VOLUME = 876.22
+# SELL_VOLUME = 224.52
+# BUY_VELOCITY = 4.04
+# SELL_VELOCITY = -2.77
+
+class Strategy
+	attr_accessor :parameters, :score, :num_trades, :trade_history
+
+	def initialize(parents=nil)
+
+		# default starting parameters.
 		@parameters = {
-			buySize: 100,
-			sellSize: 100,
-			buyVelocity: 2,
-			sellVelocity: 2
+			buyVolume: BUY_VOLUME,
+			sellVolume: SELL_VOLUME,
+			buyVelocity: BUY_VELOCITY,
+			sellVelocity: SELL_VELOCITY
 		}
+
+		if parents
+			parent1 = parents[0].parameters
+			parent2 = parents[1].parameters
+
+			@parameters.each do |key, value|
+				@parameters[key] = ((parent1[key] + parent2[key]) / 2).round(2)
+			end
+
+			mutate!
+		end
+
+		@score = nil
+		@num_trades = nil
+		@trade_history = nil
 	end
 
-	def mutate
+	def mutate!
 		# Loop over each parameter and mutate it.
 		@parameters.each do |key, value|
 			direction = rand > 0.5 ? 1 : -1
