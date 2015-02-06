@@ -7,31 +7,36 @@ require_relative 'population'
 
 # Genetic parameters
 POPULATION_SIZE = 10
-MUTATION_RATE = 0.20
-NUM_GENERATIONS = 10000
-BREEDING_POPULATION_SIZE = 6
+MUTATION_MAX_RATE = 0.20
+NUM_GENERATIONS = 600
+BREEDING_POPULATION_SIZE = 3
 
 # Simulation parameters
 STARTING_CASH = 10000
 START_DATE = Date.new(2013,1,1)
 END_DATE = Date.new(2013,12,31)
-VELOCITY_DECAY = 1.2 # Must be greater than 1
+VELOCITY_DECAY = 1.3 # Must be greater than 1
 
 DECIMAL_PRECISION = 2
 COST_PER_TRADE = 6.0
+DIVERSITY_BONUS = 100
 
 STOCK_SYMBOLS = [
-	# "TSLA", 
-	# "SCTY", 	
+	"TSLA", 
+	"SCTY", 	
 	"ETG", 
 	"GT", 
 	"FTR", 
 	"TDC",
 	"JCP",
 	"FSLR",
-	# "PLUG",
+	"PLUG",
 	"SPWR",
 	"ENPH",
+	"INTC",
+	"GOOG",
+	# "BLUE",
+	"CONN",
 ]
 
 $stock_quotes = {}
@@ -78,15 +83,12 @@ NUM_GENERATIONS.times do |generation|
 	$population.members.each do |strategy|
 		if strategy.score.nil?
 			simulation = Simulation.new(strategy)
-			strategy.score = (simulation.final_assets - STARTING_CASH).round(2)
+			strategy.score = simulation.score
+			strategy.final_assets = simulation.final_assets
 			strategy.num_trades = simulation.num_trades
 			strategy.trade_history = simulation.trade_history
 		end
 	end
-
-	# $population.members.each do |member|
-	# 	puts member.score
-	# end
 
 	puts $population.members[0].score
 
@@ -96,6 +98,13 @@ NUM_GENERATIONS.times do |generation|
 end
 
 pp $population.members[0]
+
+puts """
+BUY_VOLUME = #{$population.members[0].parameters[:buyVolume]}
+SELL_VOLUME = #{$population.members[0].parameters[:sellVolume]}
+BUY_VELOCITY = #{$population.members[0].parameters[:buyVelocity]}
+SELL_VELOCITY = #{$population.members[0].parameters[:sellVelocity]}
+"""
 
 
 

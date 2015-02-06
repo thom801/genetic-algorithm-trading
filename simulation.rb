@@ -8,47 +8,25 @@ class Simulation
 		@cash = STARTING_CASH.to_i
 		@num_trades = 0
 		@trade_history = []
+		@diversity = 0
 
 		STOCK_SYMBOLS.each do |stock_symbol|
 			@shares[stock_symbol.to_sym] = 0
 		end
 
-		# puts "Simulation started with strategy #{@strategy.inspect}"
-
-		DAYS_TO_SIMULATE.times do |day|
-
-			# puts "Day #{day + 1}"
-
-			$stock_quotes.each do |stock_symbol, quote|
-				position = quote[day]
-				velocity = position[:velocity]
-				tradeDirection = nil
-
-				if velocity > @strategy.parameters[:buyVelocity]
-					tradeDirection = 1
-					tradeVerb = 'BUY'
-				end
-
-				if velocity < @strategy.parameters[:sellVelocity]
-					tradeDirection = -1
-					tradeVerb = 'SELL'
-				end
-
-				if tradeDirection
-					tradeAction = (@strategy.parameters[:buyVolume] / position[:close]).round(2)
-      		trade stock_symbol, position, tradeAction
-
-      		@trade_history.push "#{tradeVerb} #{stock_symbol}. Velocity at: #{velocity}. Action: #{tradeAction}. Date: #{position[:date]}"
-				end
-			end
-		end
+		run_simulation
 	end
 
 	def final_assets
 		total = @cash
+
 		@shares.each do |stock_symbol, num_shares|
 			current_value = $stock_quotes[stock_symbol.to_s][DAYS_TO_SIMULATE - 1][:close]
 			total += num_shares * current_value
+
+			if num_shares > 0
+				@diversity += 1
+			end
 		end
 
 		total -= @num_trades * COST_PER_TRADE
@@ -56,7 +34,48 @@ class Simulation
 		return total.round(2)
 	end
 
+	def score
+		return ((final_assets() - STARTING_CASH) + (@diversity * DIVERSITY_BONUS)).round(2)
+	end
+
+	private
+
+	def run_simulation
+
+		DAYS_TO_SIMULATE.times do |day|
+
+			$stock_quotes.each do |stock_symbol, quote|
+				position = quote[day]
+
+				if position
+
+					velocity = position[:velocity]
+					tradeDirection = nil
+
+					if velocity > @strategy.parameters[:buyVelocity]
+						tradeDirection = 1
+						tradeVerb = 'BUY'
+					end
+
+					if velocity < @strategy.parameters[:sellVelocity]
+						tradeDirection = -1
+						tradeVerb = 'SELL'
+					end
+
+					if tradeDirection
+						tradeAction = @strategy.parameters[:buyVolume] / position[:close]
+						tradeAction = (tradeAction * tradeDirection).round(2)
+	      		trade stock_symbol, position, tradeAction
+	      		@trade_history.push "#{tradeVerb} #{stock_symbol}. Velocity at: #{velocity}. Action: #{tradeAction}. Date: #{position[:date]}"
+					end
+
+				end
+			end
+		end
+	end
+
 	def trade(stock_symbol, position, tradeAction)
+
 		tradeCost = (tradeAction * position[:close]).round(2)
 		@num_trades += 1
 

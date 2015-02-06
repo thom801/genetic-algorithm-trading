@@ -4,13 +4,8 @@ SELL_VOLUME = 300
 BUY_VELOCITY = 2
 SELL_VELOCITY = -1
 
-# BUY_VOLUME = 876.22
-# SELL_VOLUME = 224.52
-# BUY_VELOCITY = 4.04
-# SELL_VELOCITY = -2.77
-
 class Strategy
-	attr_accessor :parameters, :score, :num_trades, :trade_history
+	attr_accessor :parameters, :score, :num_trades, :trade_history, :final_assets
 
 	def initialize(parents=nil)
 
@@ -36,13 +31,15 @@ class Strategy
 		@score = nil
 		@num_trades = nil
 		@trade_history = nil
+		@final_assets = nil
 	end
 
 	def mutate!
 		# Loop over each parameter and mutate it.
 		@parameters.each do |key, value|
 			direction = rand > 0.5 ? 1 : -1
-			newValue = (value + (direction * MUTATION_RATE * value)).round(2)
+			mutation_rate = MUTATION_MAX_RATE * rand()
+			newValue = (value + (direction * mutation_rate * value)).round(2)
 			@parameters[key] = newValue
 		end
 	end
